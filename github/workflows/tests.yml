@@ -1,4 +1,39 @@
 # GitHub actions для запуска тестов
 name: Java Tests
 
-on: [push]
+on: [push]  # триггер на любой push в репозиторий
+
+jobs:
+  run-common-tests:
+    runs-on: ubuntu-latest  # Используем последний Ubuntu
+
+    steps:
+      - uses: actions/checkout@v4  # клонируем репозиторий
+
+      # Установка Java 17
+      - name: Set up Java 14
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin  # Дистрибутив Eclipse Temurin
+          java-version: "17"     # Конкретная версия JDK
+
+      # Кеширование зависимостей Maven
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository  # Путь к локальному репозиторию Maven
+          # стратегия восстановления кеша
+          key: ${{ runner.os }}-maven-
+
+      # Установка системных зависимостей для headless-режима
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get istall -y xvfb libgbm-dev x11-xkb-utils
+
+      # запуск тестов с виртуальным дисплеем
+      - name: Run tests
+        run: |
+          export DISPLAY=:0  # настройка переменной дисплея
+          Xvfb :0 -screen 0 1280x720x24 >/dev/null 2>&1 &  # запуск фонового Xvfb
+          mvn clean test -B -Dtest=!TodoApiDockerTest  # запуск всех тестов кроме исключенных
