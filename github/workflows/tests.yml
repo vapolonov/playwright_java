@@ -1,0 +1,4 @@
+# GitHub actions для запуска тестов
+name: Java Tests
+
+on: [push]
